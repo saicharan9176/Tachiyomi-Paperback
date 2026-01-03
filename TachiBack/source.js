@@ -1269,7 +1269,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.1.9",
+    version: "2.2.0",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1595,11 +1595,6 @@ var _Sources = (() => {
               if (section.id.startsWith("category-")) {
                 const sectionCategoryId = parseInt(section.id.replace("category-", ""));
                 console.log(`[DEBUG] Filtering for category ID: ${sectionCategoryId}`);
-                App.showToast({
-                  message: `${section.title}: Querying ${items.length} total manga`,
-                  duration: 3,
-                  type: "info"
-                });
                 let filteredCount = 0;
                 for (const manga of items) {
                   if (!manga?.id || !manga?.title) {
@@ -1607,6 +1602,7 @@ var _Sources = (() => {
                     continue;
                   }
                   const mangaCategoryIds = manga.categories?.nodes?.map(c => c.id) || [];
+                  console.log(`[DEBUG] Manga ${manga.id} (${manga.title}) has categories: [${mangaCategoryIds.join(", ")}], looking for ${sectionCategoryId}`);
                   if (mangaCategoryIds.includes(sectionCategoryId)) {
                     filteredCount++;
                     tiles.push(App.createPartialSourceManga({
@@ -1618,11 +1614,6 @@ var _Sources = (() => {
                   }
                 }
                 console.log(`[DEBUG] ${section.id}: Filtered to ${filteredCount} manga matching category ${sectionCategoryId}`);
-                App.showToast({
-                  message: `${section.title}: Found ${filteredCount} manga`,
-                  duration: 3,
-                  type: filteredCount > 0 ? "success" : "warning"
-                });
               } else {
                 for (const manga of items) {
                   if (!manga?.id || !manga?.title) {
@@ -1644,13 +1635,6 @@ var _Sources = (() => {
             sectionCallback(section);
           }).catch((error) => {
             console.error(`Failed to load section ${section.id}:`, error);
-            if (section.id.startsWith("category-")) {
-              App.showToast({
-                message: `${section.title}: Error - ${error.message}`,
-                duration: 5,
-                type: "error"
-              });
-            }
             section.items = [];
             sectionCallback(section);
           })
