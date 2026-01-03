@@ -970,6 +970,64 @@ var _Sources = (() => {
                     await setStateData(stateManager, interceptor, values);
                   }
                 })
+              }),
+              App.createDUIButton({
+                id: "testConnection",
+                label: "Test Connection",
+                onTap: async () => {
+                  try {
+                    const testAPI = {
+                      url: values.tachiBackAddress || DEFAULT_VALUES.tachiBackAddress,
+                      username: values.tachiBackUsername || DEFAULT_VALUES.tachiBackUsername,
+                      password: values.tachiBackPassword || DEFAULT_VALUES.tachiBackPassword
+                    };
+                    const credentials = testAPI.username && testAPI.password ? `${testAPI.username}:${testAPI.password}` : "";
+                    const auth = credentials ? Buffer.from(credentials).toString("base64") : "";
+                    const testRequest = App.createRequest({
+                      url: `${testAPI.url}/api/graphql`,
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        ...auth ? { "Authorization": `Basic ${auth}` } : {}
+                      },
+                      data: JSON.stringify({
+                        query: `query { aboutServer { name version buildType buildTime } }`
+                      })
+                    });
+                    const requestManager = App.createRequestManager({
+                      requestsPerSecond: 1,
+                      requestTimeout: 1e4
+                    });
+                    const response = await requestManager.schedule(testRequest, 1);
+                    const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+                    if (result.errors) {
+                      App.showToast({
+                        message: `Connection failed: ${result.errors[0]?.message || "Unknown error"}`,
+                        duration: 5,
+                        type: "error"
+                      });
+                    } else if (result.data?.aboutServer) {
+                      const server = result.data.aboutServer;
+                      App.showToast({
+                        message: `\u2705 Connected!\nServer: ${server.name}\nVersion: ${server.version}\nBuild: ${server.buildType}`,
+                        duration: 8,
+                        type: "success"
+                      });
+                    } else {
+                      App.showToast({
+                        message: "\u2705 Server reachable but version info unavailable",
+                        duration: 5,
+                        type: "success"
+                      });
+                    }
+                  } catch (error) {
+                    App.showToast({
+                      message: `\u274C Connection failed: ${error.message || "Cannot reach server"}`,
+                      duration: 5,
+                      type: "error"
+                    });
+                  }
+                }
               })
             ])
           }),
@@ -1177,7 +1235,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.0.3",
+    version: "2.0.4",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
