@@ -797,28 +797,21 @@ var _Sources = (() => {
     ];
   }
   async function executeGraphQL(query, variables, requestManager, stateManager) {
-    try {
-      const tachiBackAPI = await getTachiBackAPI(stateManager);
-      const request = App.createRequest({
-        url: `${tachiBackAPI.url}/api/graphql`,
-        method: "POST",
-        data: JSON.stringify({ query, variables })
-      });
-      const response = await requestManager.schedule(request, 1);
-      const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
-      if (result.errors) {
-        console.error("GraphQL errors:", JSON.stringify(result.errors));
-        throw new Error(`GraphQL Error: ${JSON.stringify(result.errors)}`);
-      }
-      if (!result.data) {
-        console.error("GraphQL returned no data:", JSON.stringify(result));
-        throw new Error("GraphQL returned no data");
-      }
-      return result.data;
-    } catch (error) {
-      console.error("executeGraphQL failed:", error.message || error);
-      throw error;
+    const tachiBackAPI = await getTachiBackAPI(stateManager);
+    const request = App.createRequest({
+      url: `${tachiBackAPI.url}/api/graphql`,
+      method: "POST",
+      data: JSON.stringify({ query, variables })
+    });
+    const response = await requestManager.schedule(request, 1);
+    const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+    if (result.errors) {
+      throw new Error(`GraphQL Error: ${result.errors[0]?.message || JSON.stringify(result.errors)}`);
     }
+    if (!result.data) {
+      throw new Error("GraphQL returned no data");
+    }
+    return result.data;
   }
   async function getMangaDetails(mangaId, requestManager, stateManager) {
     // Handle placeholder IDs for server unavailable state
@@ -1261,7 +1254,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.0.7",
+    version: "2.0.8",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1393,21 +1386,16 @@ var _Sources = (() => {
       return [];
     }
     async getHomePageSections(sectionCallback) {
-      try {
-        if (!await this.interceptor.isServerAvailable()) {
-          sectionCallback(
-            App.createHomeSection({
-              id: "placeholder-id",
-              title: "Library",
-              items: getServerUnavailableMangaTiles(),
-              containsMoreItems: false,
-              type: "singleRowNormal"
-            })
-          );
-          return;
-        }
-      } catch (error) {
-        console.error("Server availability check failed:", error);
+      if (!await this.interceptor.isServerAvailable()) {
+        sectionCallback(
+          App.createHomeSection({
+            id: "placeholder-id",
+            title: "Library",
+            items: getServerUnavailableMangaTiles(),
+            containsMoreItems: false,
+            type: "singleRowNormal"
+          })
+        );
         return;
       }
       const tachiBackAPI = await getTachiBackAPI(this.stateManager);
