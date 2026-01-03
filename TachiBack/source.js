@@ -763,8 +763,13 @@ var _Sources = (() => {
       this.authorization = "";
     }
     async isServerAvailable() {
-      await this.getAuthorizationString();
-      return this.authorization !== "";
+      try {
+        await this.getAuthorizationString();
+        return this.authorization !== "" && this.authorization !== null && this.authorization !== undefined;
+      } catch (error) {
+        console.error("isServerAvailable check failed:", error);
+        return false;
+      }
     }
     async getAuthorizationString() {
       if (this.authorization === "") {
@@ -893,10 +898,18 @@ var _Sources = (() => {
     showLibraryCategories: true
   };
   async function getTachiBackAPI(stateManager) {
-    const tachiBackAddress = await stateManager.retrieve("tachiBackAddress") ?? DEFAULT_VALUES.tachiBackAddress;
-    const tachiBackUsername = await stateManager.keychain.retrieve("tachiBackUsername") ?? DEFAULT_VALUES.tachiBackUsername;
-    const tachiBackPassword = await stateManager.keychain.retrieve("tachiBackPassword") ?? DEFAULT_VALUES.tachiBackPassword;
-    return { url: tachiBackAddress, username: tachiBackUsername, password: tachiBackPassword };
+    try {
+      const tachiBackAddress = await stateManager.retrieve("tachiBackAddress") ?? DEFAULT_VALUES.tachiBackAddress;
+      const tachiBackUsername = await stateManager.keychain.retrieve("tachiBackUsername") ?? DEFAULT_VALUES.tachiBackUsername;
+      const tachiBackPassword = await stateManager.keychain.retrieve("tachiBackPassword") ?? DEFAULT_VALUES.tachiBackPassword;
+      if (!tachiBackAddress) {
+        throw new Error("Server URL is not configured");
+      }
+      return { url: tachiBackAddress, username: tachiBackUsername || "", password: tachiBackPassword || "" };
+    } catch (error) {
+      console.error("getTachiBackAPI failed:", error);
+      throw error;
+    }
   }
   async function getAuthorization(stateManager) {
     const tachiBackAPI = await getTachiBackAPI(stateManager);
@@ -1256,7 +1269,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.1.1",
+    version: "2.1.2",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
