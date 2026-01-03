@@ -1269,7 +1269,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.1.2",
+    version: "2.1.3",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1560,21 +1560,29 @@ var _Sources = (() => {
             const tiles = [];
             let items = [];
             if (section.id === "continuereading") {
-              items = data.chapters?.nodes || [];
+              items = data?.chapters?.nodes || [];
               for (const chapter of items) {
+                if (!chapter?.manga?.id || !chapter?.manga?.title) {
+                  console.warn("Skipping chapter with missing manga data:", chapter);
+                  continue;
+                }
                 tiles.push(App.createPartialSourceManga({
                   title: chapter.manga.title,
-                  image: `${tachiBackAPI.url}${chapter.manga.thumbnailUrl}`,
+                  image: `${tachiBackAPI.url}${chapter.manga.thumbnailUrl || ""}`,
                   mangaId: `${chapter.manga.id}`,
                   subtitle: `Reading (${chapter.lastPageRead || 0})`
                 }));
               }
             } else {
-              items = data.mangas?.nodes || [];
+              items = data?.mangas?.nodes || [];
               for (const manga of items) {
+                if (!manga?.id || !manga?.title) {
+                  console.warn("Skipping manga with missing data:", manga);
+                  continue;
+                }
                 tiles.push(App.createPartialSourceManga({
                   title: manga.title,
-                  image: `${tachiBackAPI.url}${manga.thumbnailUrl}`,
+                  image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
                   mangaId: `${manga.id}`,
                   subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
                 }));
