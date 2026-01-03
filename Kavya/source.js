@@ -721,16 +721,16 @@ var _Sources = (() => {
     }
   });
 
-  // src/Kavya/Kavya.ts
-  var Kavya_exports = {};
-  __export(Kavya_exports, {
-    Kavya: () => Kavya,
-    KavyaInfo: () => KavyaInfo
+  // src/TachiBack/TachiBack.ts
+  var TachiBack_exports = {};
+  __export(TachiBack_exports, {
+    TachiBack: () => TachiBack,
+    TachiBackInfo: () => TachiBackInfo
   });
   var import_types = __toESM(require_lib());
 
-  // src/Kavya/Common.ts
-  var TACHIYOMI_PUBLICATION_STATUS = {
+  // src/TachiBack/Common.ts
+  var TACHIBACK_PUBLICATION_STATUS = {
     "ONGOING": "Ongoing",
     "COMPLETED": "Completed",
     "LICENSED": "Licensed",
@@ -739,7 +739,7 @@ var _Sources = (() => {
     "ON_HIATUS": "Hiatus",
     "UNKNOWN": "Unknown"
   };
-  var TachiyomiRequestInterceptor = class {
+  var TachiBackRequestInterceptor = class {
     constructor(stateManager) {
       this.stateManager = stateManager;
       this.authorization = "";
@@ -773,7 +773,7 @@ var _Sources = (() => {
   function getServerUnavailableMangaTiles() {
     return [
       App.createPartialSourceManga({
-        title: "Tachiyomi Server",
+        title: "Tachi-back Server",
         image: "",
         mangaId: "placeholder-id",
         subtitle: "unavailable"
@@ -781,9 +781,9 @@ var _Sources = (() => {
     ];
   }
   async function executeGraphQL(query, variables, requestManager, stateManager) {
-    const tachiyomiAPI = await getTachiyomiAPI(stateManager);
+    const tachiBackAPI = await getTachiBackAPI(stateManager);
     const request = App.createRequest({
-      url: `${tachiyomiAPI.url}/api/graphql`,
+      url: `${tachiBackAPI.url}/api/graphql`,
       method: "POST",
       data: JSON.stringify({ query, variables })
     });
@@ -811,7 +811,11 @@ var _Sources = (() => {
 			}
 		}
 	`;
-    const data = await executeGraphQL(MANGA_DETAILS_QUERY, { id: parseInt(mangaId) }, requestManager, stateManager);
+    const parsedId = parseInt(mangaId);
+    if (isNaN(parsedId)) {
+      throw new Error(`Invalid manga ID: ${mangaId}`);
+    }
+    const data = await executeGraphQL(MANGA_DETAILS_QUERY, { id: parsedId }, requestManager, stateManager);
     const manga = data.manga;
     const genres = manga.genre ? manga.genre.split(",").map((g) => g.trim()) : [];
     const tagSections = [];
@@ -826,13 +830,13 @@ var _Sources = (() => {
         tags
       }));
     }
-    const tachiyomiAPI = await getTachiyomiAPI(stateManager);
+    const tachiBackAPI = await getTachiBackAPI(stateManager);
     return {
-      image: `${tachiyomiAPI.url}${manga.thumbnailUrl}`,
+      image: `${tachiBackAPI.url}${manga.thumbnailUrl}`,
       artist: manga.artist || "Unknown",
       author: manga.author || "Unknown",
       desc: manga.description || "",
-      status: TACHIYOMI_PUBLICATION_STATUS[manga.status] || "Unknown",
+      status: TACHIBACK_PUBLICATION_STATUS[manga.status] || "Unknown",
       hentai: false,
       titles: [manga.title],
       tags: tagSections
@@ -845,27 +849,27 @@ var _Sources = (() => {
     });
   }
   var DEFAULT_VALUES = {
-    tachiyomiAddress: "http://192.168.29.109:4567",
-    tachiyomiUsername: "",
-    tachiyomiPassword: "",
+    tachiBackAddress: "http://192.168.29.109:4567",
+    tachiBackUsername: "",
+    tachiBackPassword: "",
     pageSize: 40,
     showContinueReading: true,
     showRecentlyUpdated: true,
     showRecentlyAdded: true,
     showLibraryCategories: true
   };
-  async function getTachiyomiAPI(stateManager) {
-    const tachiyomiAddress = await stateManager.retrieve("tachiyomiAddress") ?? DEFAULT_VALUES.tachiyomiAddress;
-    const tachiyomiUsername = await stateManager.keychain.retrieve("tachiyomiUsername") ?? DEFAULT_VALUES.tachiyomiUsername;
-    const tachiyomiPassword = await stateManager.keychain.retrieve("tachiyomiPassword") ?? DEFAULT_VALUES.tachiyomiPassword;
-    return { url: tachiyomiAddress, username: tachiyomiUsername, password: tachiyomiPassword };
+  async function getTachiBackAPI(stateManager) {
+    const tachiBackAddress = await stateManager.retrieve("tachiBackAddress") ?? DEFAULT_VALUES.tachiBackAddress;
+    const tachiBackUsername = await stateManager.keychain.retrieve("tachiBackUsername") ?? DEFAULT_VALUES.tachiBackUsername;
+    const tachiBackPassword = await stateManager.keychain.retrieve("tachiBackPassword") ?? DEFAULT_VALUES.tachiBackPassword;
+    return { url: tachiBackAddress, username: tachiBackUsername, password: tachiBackPassword };
   }
   async function getAuthorization(stateManager) {
-    const tachiyomiAPI = await getTachiyomiAPI(stateManager);
-    if (!tachiyomiAPI.username || !tachiyomiAPI.password) {
+    const tachiBackAPI = await getTachiBackAPI(stateManager);
+    if (!tachiBackAPI.username || !tachiBackAPI.password) {
       return "";
     }
-    const credentials = `${tachiyomiAPI.username}:${tachiyomiAPI.password}`;
+    const credentials = `${tachiBackAPI.username}:${tachiBackAPI.password}`;
     const base64Credentials = Buffer.from(credentials).toString("base64");
     return base64Credentials;
   }
@@ -878,7 +882,7 @@ var _Sources = (() => {
     return { pageSize, showContinueReading, showRecentlyUpdated, showRecentlyAdded, showLibraryCategories };
   }
 
-  // src/Kavya/Settings.ts
+  // src/TachiBack/Settings.ts
   var serverSettingsMenu = (stateManager, interceptor) => {
     return App.createDUINavigationButton({
       id: "server_settings",
@@ -891,7 +895,7 @@ var _Sources = (() => {
             isHidden: false,
             rows: async () => [
               App.createDUIMultilineLabel({
-                label: "Tachiyomi Server",
+                label: "Tachi-back Server",
                 value: "Connect to your Tachidesk/Tachiyomi server.\n\nDefault: http://192.168.29.109:4567\n\nNote: If authentication is enabled, provide username and password.",
                 id: "description"
               })
@@ -903,40 +907,40 @@ var _Sources = (() => {
             isHidden: false,
             rows: async () => retrieveStateData(stateManager).then((values) => [
               App.createDUIInputField({
-                id: "tachiyomiAddress",
+                id: "tachiBackAddress",
                 label: "Server URL",
                 value: App.createDUIBinding({
                   async get() {
-                    return values.tachiyomiAddress;
+                    return values.tachiBackAddress;
                   },
                   async set(value) {
-                    values.tachiyomiAddress = value;
+                    values.tachiBackAddress = value;
                     await setStateData(stateManager, interceptor, values);
                   }
                 })
               }),
               App.createDUISecureInputField({
-                id: "tachiyomiUsername",
+                id: "tachiBackUsername",
                 label: "Username (optional)",
                 value: App.createDUIBinding({
                   async get() {
-                    return values.tachiyomiUsername;
+                    return values.tachiBackUsername;
                   },
                   async set(newValue) {
-                    values.tachiyomiUsername = newValue;
+                    values.tachiBackUsername = newValue;
                     await setStateData(stateManager, interceptor, values);
                   }
                 })
               }),
               App.createDUISecureInputField({
-                id: "tachiyomiPassword",
+                id: "tachiBackPassword",
                 label: "Password (optional)",
                 value: App.createDUIBinding({
                   async get() {
-                    return values.tachiyomiPassword;
+                    return values.tachiBackPassword;
                   },
                   async set(newValue) {
-                    values.tachiyomiPassword = newValue;
+                    values.tachiBackPassword = newValue;
                     await setStateData(stateManager, interceptor, values);
                   }
                 })
@@ -1021,15 +1025,15 @@ var _Sources = (() => {
     });
   };
   async function retrieveStateData(stateManager) {
-    const tachiyomiAddress = await stateManager.retrieve("tachiyomiAddress") ?? DEFAULT_VALUES.tachiyomiAddress;
-    const tachiyomiUsername = await stateManager.keychain.retrieve("tachiyomiUsername") ?? DEFAULT_VALUES.tachiyomiUsername;
-    const tachiyomiPassword = await stateManager.keychain.retrieve("tachiyomiPassword") ?? DEFAULT_VALUES.tachiyomiPassword;
+    const tachiBackAddress = await stateManager.retrieve("tachiBackAddress") ?? DEFAULT_VALUES.tachiBackAddress;
+    const tachiBackUsername = await stateManager.keychain.retrieve("tachiBackUsername") ?? DEFAULT_VALUES.tachiBackUsername;
+    const tachiBackPassword = await stateManager.keychain.retrieve("tachiBackPassword") ?? DEFAULT_VALUES.tachiBackPassword;
     const pageSize = await stateManager.retrieve("pageSize") ?? DEFAULT_VALUES.pageSize;
     const showContinueReading = await stateManager.retrieve("showContinueReading") ?? DEFAULT_VALUES.showContinueReading;
     const showRecentlyUpdated = await stateManager.retrieve("showRecentlyUpdated") ?? DEFAULT_VALUES.showRecentlyUpdated;
     const showRecentlyAdded = await stateManager.retrieve("showRecentlyAdded") ?? DEFAULT_VALUES.showRecentlyAdded;
     const showLibraryCategories = await stateManager.retrieve("showLibraryCategories") ?? DEFAULT_VALUES.showLibraryCategories;
-    return { tachiyomiAddress, tachiyomiUsername, tachiyomiPassword, pageSize, showContinueReading, showRecentlyUpdated, showRecentlyAdded, showLibraryCategories };
+    return { tachiBackAddress, tachiBackUsername, tachiBackPassword, pageSize, showContinueReading, showRecentlyUpdated, showRecentlyAdded, showLibraryCategories };
   }
   async function setStateData(stateManager, interceptor, data) {
     const promises = [];
@@ -1038,12 +1042,12 @@ var _Sources = (() => {
     for (const [key, value] of Object.entries(data)) {
       if (prevStateData[key] !== value) {
         switch (key) {
-          case "tachiyomiAddress":
+          case "tachiBackAddress":
             promises.push(stateManager.store(key, value));
             clear = true;
             break;
-          case "tachiyomiUsername":
-          case "tachiyomiPassword":
+          case "tachiBackUsername":
+          case "tachiBackPassword":
             promises.push(stateManager.keychain.store(key, value));
             clear = true;
             break;
@@ -1060,14 +1064,14 @@ var _Sources = (() => {
     if (clear) interceptor.clearAuthorizationString();
   }
 
-  // src/Kavya/Search.ts
+  // src/TachiBack/Search.ts
   async function searchRequest(searchQuery, metadata, requestManager, interceptor, stateManager, cacheManager) {
     if (!await interceptor.isServerAvailable()) {
       return App.createPagedResults({
         results: getServerUnavailableMangaTiles()
       });
     }
-    const tachiyomiAPI = await getTachiyomiAPI(stateManager);
+    const tachiBackAPI = await getTachiBackAPI(stateManager);
     const { pageSize } = await getOptions(stateManager);
     const offset = metadata?.offset ?? 0;
     let result = cacheManager.getCachedData(searchRequestToString(searchQuery));
@@ -1106,7 +1110,7 @@ var _Sources = (() => {
             tiles.push(
               App.createPartialSourceManga({
                 title: manga.title,
-                image: `${tachiyomiAPI.url}${manga.thumbnailUrl}`,
+                image: `${tachiBackAPI.url}${manga.thumbnailUrl}`,
                 mangaId: `${manga.id}`,
                 subtitle: manga.inLibrary ? "In Library" : void 0
               })
@@ -1126,7 +1130,7 @@ var _Sources = (() => {
     });
   }
 
-  // src/Kavya/CacheManager.ts
+  // src/TachiBack/CacheManager.ts
   var CacheManager = class {
     constructor() {
       this.cachedData = {};
@@ -1158,29 +1162,29 @@ var _Sources = (() => {
     }
   };
 
-  // src/Kavya/Kavya.ts
-  var KavyaInfo = {
-    version: "2.0.0",
-    name: "Tachiyomi",
+  // src/TachiBack/TachiBack.ts
+  var TachiBackInfo = {
+    version: "2.0.2",
+    name: "Tachi-back",
     icon: "icon.png",
-    author: "ACK72",
-    authorWebsite: "https://github.com/ACK72",
-    description: "Tachiyomi server client extension for Paperback",
+    author: "saicharan9176",
+    authorWebsite: "https://github.com/saicharan9176/Tachiyomi-Paperback",
+    description: "Tachi-back server client extension for Paperback",
     contentRating: import_types.ContentRating.EVERYONE,
     websiteBaseURL: "https://github.com/Suwayomi/Tachidesk-Server",
     sourceTags: [
       {
-        text: "Tachiyomi",
+        text: "Tachi-back",
         type: import_types.BadgeColor.BLUE
       }
     ],
     intents: import_types.SourceIntents.COLLECTION_MANAGEMENT | import_types.SourceIntents.HOMEPAGE_SECTIONS | import_types.SourceIntents.MANGA_CHAPTERS | import_types.SourceIntents.MANGA_TRACKING | import_types.SourceIntents.SETTINGS_UI
   };
-  var Kavya = class {
+  var TachiBack = class {
     constructor() {
       this.stateManager = App.createSourceStateManager();
       this.cacheManager = new CacheManager();
-      this.interceptor = new TachiyomiRequestInterceptor(this.stateManager);
+      this.interceptor = new TachiBackRequestInterceptor(this.stateManager);
       this.requestManager = App.createRequestManager({
         requestsPerSecond: 8,
         requestTimeout: 2e4,
@@ -1225,7 +1229,11 @@ var _Sources = (() => {
 				}
 			}
 		`;
-      const data = await executeGraphQL(CHAPTERS_QUERY, { mangaId: parseInt(mangaId) }, this.requestManager, this.stateManager);
+      const parsedMangaId = parseInt(mangaId);
+      if (isNaN(parsedMangaId)) {
+        throw new Error(`Invalid manga ID: ${mangaId}`);
+      }
+      const data = await executeGraphQL(CHAPTERS_QUERY, { mangaId: parsedMangaId }, this.requestManager, this.stateManager);
       const chapters = data.chapters.nodes;
       return chapters.map((chapter, index) => {
         const progress = !chapter.isRead && chapter.lastPageRead > 0 ? `\xB7 Reading (${chapter.lastPageRead}/${chapter.pageCount})` : chapter.isRead ? "\xB7 Read" : "";
@@ -1249,12 +1257,16 @@ var _Sources = (() => {
 				}
 			}
 		`;
-      const data = await executeGraphQL(CHAPTER_PAGES_QUERY, { chapterId: parseInt(chapterId) }, this.requestManager, this.stateManager);
+      const parsedChapterId = parseInt(chapterId);
+      if (isNaN(parsedChapterId)) {
+        throw new Error(`Invalid chapter ID: ${chapterId}`);
+      }
+      const data = await executeGraphQL(CHAPTER_PAGES_QUERY, { chapterId: parsedChapterId }, this.requestManager, this.stateManager);
       const pageCount = data.chapter.pageCount;
-      const tachiyomiAPI = await getTachiyomiAPI(this.stateManager);
+      const tachiBackAPI = await getTachiBackAPI(this.stateManager);
       const pages = [];
       for (let i = 0; i < pageCount; i++) {
-        pages.push(`${tachiyomiAPI.url}/api/v1/manga/${mangaId}/chapter/${chapterId}/page/${i}`);
+        pages.push(`${tachiBackAPI.url}/api/v1/manga/${mangaId}/chapter/${chapterId}/page/${i}`);
       }
       return App.createChapterDetails({
         id: chapterId,
@@ -1284,7 +1296,7 @@ var _Sources = (() => {
         );
         return;
       }
-      const tachiyomiAPI = await getTachiyomiAPI(this.stateManager);
+      const tachiBackAPI = await getTachiBackAPI(this.stateManager);
       const { showContinueReading, showRecentlyUpdated, showRecentlyAdded, showLibraryCategories } = await getOptions(this.stateManager);
       const pageSize = (await getOptions(this.stateManager)).pageSize / 2;
       const sections = [];
@@ -1435,7 +1447,7 @@ var _Sources = (() => {
               for (const chapter of items) {
                 tiles.push(App.createPartialSourceManga({
                   title: chapter.manga.title,
-                  image: `${tachiyomiAPI.url}${chapter.manga.thumbnailUrl}`,
+                  image: `${tachiBackAPI.url}${chapter.manga.thumbnailUrl}`,
                   mangaId: `${chapter.manga.id}`,
                   subtitle: `Reading (${chapter.lastPageRead || 0})`
                 }));
@@ -1445,7 +1457,7 @@ var _Sources = (() => {
               for (const manga of items) {
                 tiles.push(App.createPartialSourceManga({
                   title: manga.title,
-                  image: `${tachiyomiAPI.url}${manga.thumbnailUrl}`,
+                  image: `${tachiBackAPI.url}${manga.thumbnailUrl}`,
                   mangaId: `${manga.id}`,
                   subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
                 }));
@@ -1464,7 +1476,7 @@ var _Sources = (() => {
       await Promise.all(promises);
     }
     async getViewMoreItems(homepageSectionId, metadata) {
-      const tachiyomiAPI = await getTachiyomiAPI(this.stateManager);
+      const tachiBackAPI = await getTachiBackAPI(this.stateManager);
       const { pageSize } = await getOptions(this.stateManager);
       const offset = metadata?.offset ?? 0;
       let query, variables = {};
@@ -1566,7 +1578,7 @@ var _Sources = (() => {
           for (const chapter of items) {
             tiles.push(App.createPartialSourceManga({
               title: chapter.manga.title,
-              image: `${tachiyomiAPI.url}${chapter.manga.thumbnailUrl}`,
+              image: `${tachiBackAPI.url}${chapter.manga.thumbnailUrl}`,
               mangaId: `${chapter.manga.id}`,
               subtitle: `Reading (${chapter.lastPageRead || 0})`
             }));
@@ -1576,7 +1588,7 @@ var _Sources = (() => {
           for (const manga of items) {
             tiles.push(App.createPartialSourceManga({
               title: manga.title,
-              image: `${tachiyomiAPI.url}${manga.thumbnailUrl}`,
+              image: `${tachiBackAPI.url}${manga.thumbnailUrl}`,
               mangaId: `${manga.id}`,
               subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
             }));
@@ -1607,7 +1619,11 @@ var _Sources = (() => {
 			}
 		`;
       try {
-        const data = await executeGraphQL(CHAPTERS_QUERY, { mangaId: parseInt(mangaId) }, this.requestManager, this.stateManager);
+        const parsedMangaId = parseInt(mangaId);
+        if (isNaN(parsedMangaId)) {
+          return void 0;
+        }
+        const data = await executeGraphQL(CHAPTERS_QUERY, { mangaId: parsedMangaId }, this.requestManager, this.stateManager);
         const chapters = data.chapters.nodes;
         if (chapters.length === 0) {
           return void 0;
@@ -1639,7 +1655,11 @@ var _Sources = (() => {
 						}
 					}
 				`;
-          const data = await executeGraphQL(MANGA_INFO_QUERY, { id: parseInt(mangaId) }, this.requestManager, this.stateManager);
+          const parsedId = parseInt(mangaId);
+          if (isNaN(parsedId)) {
+            throw new Error(`Invalid manga ID: ${mangaId}`);
+          }
+          const data = await executeGraphQL(MANGA_INFO_QUERY, { id: parsedId }, this.requestManager, this.stateManager);
           const manga = data.manga;
           return [
             App.createDUISection({
@@ -1682,8 +1702,12 @@ var _Sources = (() => {
 						}
 					}
 				`;
+          const parsedId = parseInt(mangaId);
+          if (isNaN(parsedId)) {
+            throw new Error(`Invalid manga ID: ${mangaId}`);
+          }
           await executeGraphQL(UPDATE_LIBRARY_MUTATION, {
-            id: parseInt(mangaId),
+            id: parsedId,
             inLibrary: values.inLibrary
           }, this.requestManager, this.stateManager);
         }
@@ -1707,8 +1731,14 @@ var _Sources = (() => {
 						}
 					}
 				`;
+          const parsedChapterId = parseInt(readAction.sourceChapterId);
+          if (isNaN(parsedChapterId)) {
+            console.error(`Invalid chapter ID: ${readAction.sourceChapterId}`);
+            await actionQueue.discardChapterReadAction(readAction);
+            continue;
+          }
           await executeGraphQL(UPDATE_CHAPTER_MUTATION, {
-            id: parseInt(readAction.sourceChapterId)
+            id: parsedChapterId
           }, this.requestManager, this.stateManager);
           await actionQueue.discardChapterReadAction(readAction);
         } catch (error) {
@@ -1718,6 +1748,6 @@ var _Sources = (() => {
       }
     }
   };
-  return __toCommonJS(Kavya_exports);
+  return __toCommonJS(TachiBack_exports);
 })();
 this.Sources = _Sources; if (typeof exports === 'object' && typeof module !== 'undefined') {module.exports.Sources = this.Sources;}
