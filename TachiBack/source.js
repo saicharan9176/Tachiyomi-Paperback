@@ -1269,7 +1269,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.2.0",
+    version: "2.2.1",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1614,6 +1614,9 @@ var _Sources = (() => {
                   }
                 }
                 console.log(`[DEBUG] ${section.id}: Filtered to ${filteredCount} manga matching category ${sectionCategoryId}`);
+                if (filteredCount === 0 && items.length > 0) {
+                  throw new Error(`Category "${section.title}": Queried ${items.length} manga but none have category ID ${sectionCategoryId}. Check Tachidesk category assignments.`);
+                }
               } else {
                 for (const manga of items) {
                   if (!manga?.id || !manga?.title) {
@@ -1635,7 +1638,14 @@ var _Sources = (() => {
             sectionCallback(section);
           }).catch((error) => {
             console.error(`Failed to load section ${section.id}:`, error);
-            section.items = [];
+            section.items = [
+              App.createPartialSourceManga({
+                title: "Error Loading Section",
+                image: "",
+                mangaId: "error-" + section.id,
+                subtitle: error.message
+              })
+            ];
             sectionCallback(section);
           })
         );
