@@ -1235,7 +1235,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.0.4",
+    version: "2.0.5",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
