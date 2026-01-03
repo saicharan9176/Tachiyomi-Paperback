@@ -1283,7 +1283,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.2.4",
+    version: "2.2.5",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1804,14 +1804,32 @@ var _Sources = (() => {
           }
         } else {
           items = data.mangas?.nodes || [];
-          for (const manga of items) {
-            if (!manga?.id || !manga?.title) continue;
-            tiles.push(App.createPartialSourceManga({
-              title: manga.title,
-              image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
-              mangaId: `${manga.id}`,
-              subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
-            }));
+          if (homepageSectionId.startsWith("category-")) {
+            const sectionCategoryId = parseInt(homepageSectionId.replace("category-", ""));
+            console.log(`[getViewMoreItems] Filtering ${items.length} manga for category ${sectionCategoryId}`);
+            for (const manga of items) {
+              if (!manga?.id || !manga?.title) continue;
+              const mangaCategoryIds = manga.categories?.nodes?.map(c => c.id) || [];
+              if (mangaCategoryIds.includes(sectionCategoryId)) {
+                tiles.push(App.createPartialSourceManga({
+                  title: manga.title,
+                  image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
+                  mangaId: `${manga.id}`,
+                  subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
+                }));
+              }
+            }
+            console.log(`[getViewMoreItems] Filtered to ${tiles.length} manga`);
+          } else {
+            for (const manga of items) {
+              if (!manga?.id || !manga?.title) continue;
+              tiles.push(App.createPartialSourceManga({
+                title: manga.title,
+                image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
+                mangaId: `${manga.id}`,
+                subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
+              }));
+            }
           }
         }
         return App.createPagedResults({
