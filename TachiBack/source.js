@@ -888,7 +888,7 @@ var _Sources = (() => {
     });
   }
   var DEFAULT_VALUES = {
-    tachiBackAddress: "http://192.168.29.109:4567",
+    tachiBackAddress: "http://localhost:4567",
     tachiBackUsername: "",
     tachiBackPassword: "",
     pageSize: 40,
@@ -1261,7 +1261,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.0.5",
+    version: "2.0.7",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
