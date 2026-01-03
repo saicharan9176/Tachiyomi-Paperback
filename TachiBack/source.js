@@ -1283,7 +1283,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.2.2",
+    version: "2.2.3",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1415,7 +1415,9 @@ var _Sources = (() => {
       return [];
     }
     async getHomePageSections(sectionCallback) {
+      console.log("=== getHomePageSections CALLED ===");
       if (!await this.interceptor.isServerAvailable()) {
+        console.log("Server not available, showing placeholder");
         sectionCallback(
           App.createHomeSection({
             id: "placeholder-id",
@@ -1427,11 +1429,15 @@ var _Sources = (() => {
         );
         return;
       }
+      console.log("Server available, loading sections");
       const tachiBackAPI = await getTachiBackAPI(this.stateManager);
       const { showContinueReading, showRecentlyUpdated, showRecentlyAdded, showLibraryCategories } = await getOptions(this.stateManager);
       const pageSize = (await getOptions(this.stateManager)).pageSize / 2;
+      console.log(`Options: CR=${showContinueReading}, RU=${showRecentlyUpdated}, RA=${showRecentlyAdded}, Cat=${showLibraryCategories}, pageSize=${pageSize}`);
       const sections = [];
+      console.log("Creating section array...");
       if (showContinueReading) {
+        console.log("Adding Continue Reading section");
         sections.push(App.createHomeSection({
           id: "continuereading",
           title: "Continue Reading",
@@ -1487,11 +1493,14 @@ var _Sources = (() => {
         }
       }
       const promises = [];
+      console.log(`Created ${sections.length} sections, calling sectionCallback for each...`);
       for (const section of sections) {
         sectionCallback(section);
       }
+      console.log("Starting to load section data...");
       for (const section of sections) {
         let query, variables = {};
+        console.log(`Processing section: ${section.id}`);
         switch (true) {
           case section.id === "continuereading":
             query = `
