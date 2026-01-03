@@ -742,17 +742,18 @@ var _Sources = (() => {
   function base64Encode(str) {
     const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let result = "";
-    let i = 0;
-    while (i < str.length) {
-      const a = str.charCodeAt(i++);
-      const b = i < str.length ? str.charCodeAt(i++) : 0;
-      const c = i < str.length ? str.charCodeAt(i++) : 0;
-      const bitmap = (a << 16) | (b << 8) | c;
-      const strLen = str.length;
-      result += base64Chars.charAt((bitmap >> 18) & 63);
-      result += base64Chars.charAt((bitmap >> 12) & 63);
-      result += (i - 2 < strLen) ? base64Chars.charAt((bitmap >> 6) & 63) : "=";
-      result += (i - 1 < strLen) ? base64Chars.charAt(bitmap & 63) : "=";
+    let i;
+    for (i = 0; i < str.length; i += 3) {
+      const byte1 = str.charCodeAt(i);
+      const byte2 = i + 1 < str.length ? str.charCodeAt(i + 1) : 0;
+      const byte3 = i + 2 < str.length ? str.charCodeAt(i + 2) : 0;
+      const encoded1 = byte1 >> 2;
+      const encoded2 = ((byte1 & 3) << 4) | (byte2 >> 4);
+      const encoded3 = ((byte2 & 15) << 2) | (byte3 >> 6);
+      const encoded4 = byte3 & 63;
+      result += base64Chars[encoded1] + base64Chars[encoded2];
+      result += i + 1 < str.length ? base64Chars[encoded3] : "=";
+      result += i + 2 < str.length ? base64Chars[encoded4] : "=";
     }
     return result;
   }
@@ -1255,7 +1256,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.1.0",
+    version: "2.1.1",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
