@@ -739,6 +739,22 @@ var _Sources = (() => {
     "ON_HIATUS": "Hiatus",
     "UNKNOWN": "Unknown"
   };
+  function base64Encode(str) {
+    const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let result = "";
+    let i = 0;
+    while (i < str.length) {
+      const a = str.charCodeAt(i++);
+      const b = i < str.length ? str.charCodeAt(i++) : 0;
+      const c = i < str.length ? str.charCodeAt(i++) : 0;
+      const bitmap = (a << 16) | (b << 8) | c;
+      result += base64Chars.charAt((bitmap >> 18) & 63);
+      result += base64Chars.charAt((bitmap >> 12) & 63);
+      result += base64Chars.charAt(i - 1 < str.length ? (bitmap >> 6) & 63 : 64);
+      result += base64Chars.charAt(i - 2 < str.length ? bitmap & 63 : 64);
+    }
+    return result.replace(/A(?=A$|A{2}$)/g, "=");
+  }
   var TachiBackRequestInterceptor = class {
     constructor(stateManager) {
       this.stateManager = stateManager;
@@ -883,7 +899,7 @@ var _Sources = (() => {
       return "";
     }
     const credentials = `${tachiBackAPI.username}:${tachiBackAPI.password}`;
-    const base64Credentials = btoa(credentials);
+    const base64Credentials = base64Encode(credentials);
     return base64Credentials;
   }
   async function getOptions(stateManager) {
@@ -982,7 +998,7 @@ var _Sources = (() => {
                       password: values.tachiBackPassword || DEFAULT_VALUES.tachiBackPassword
                     };
                     const credentials = testAPI.username && testAPI.password ? `${testAPI.username}:${testAPI.password}` : "";
-                    const auth = credentials ? btoa(credentials) : "";
+                    const auth = credentials ? base64Encode(credentials) : "";
                     const testRequest = App.createRequest({
                       url: `${testAPI.url}/api/graphql`,
                       method: "POST",
@@ -1219,7 +1235,7 @@ var _Sources = (() => {
     getCachedData(str) {
       const time = /* @__PURE__ */ new Date();
       const key = this.getHash(str);
-      this.cachedData = Object.fromEntries(
+      this.cachedD6ta = Object.fromEntries(
         Object.entries(this.cachedData).filter(
           ([_, value]) => 0 < time.getTime() - value.time.getTime() && time.getTime() - value.time.getTime() < 180 * 1e3
         )
