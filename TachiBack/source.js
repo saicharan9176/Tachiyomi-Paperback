@@ -883,7 +883,7 @@ var _Sources = (() => {
       return "";
     }
     const credentials = `${tachiBackAPI.username}:${tachiBackAPI.password}`;
-    const base64Credentials = Buffer.from(credentials).toString("base64");
+    const base64Credentials = btoa(credentials);
     return base64Credentials;
   }
   async function getOptions(stateManager) {
@@ -982,7 +982,7 @@ var _Sources = (() => {
                       password: values.tachiBackPassword || DEFAULT_VALUES.tachiBackPassword
                     };
                     const credentials = testAPI.username && testAPI.password ? `${testAPI.username}:${testAPI.password}` : "";
-                    const auth = credentials ? Buffer.from(credentials).toString("base64") : "";
+                    const auth = credentials ? btoa(credentials) : "";
                     const testRequest = App.createRequest({
                       url: `${testAPI.url}/api/graphql`,
                       method: "POST",
