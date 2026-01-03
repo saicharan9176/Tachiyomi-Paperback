@@ -748,10 +748,11 @@ var _Sources = (() => {
       const b = i < str.length ? str.charCodeAt(i++) : 0;
       const c = i < str.length ? str.charCodeAt(i++) : 0;
       const bitmap = (a << 16) | (b << 8) | c;
+      const strLen = str.length;
       result += base64Chars.charAt((bitmap >> 18) & 63);
       result += base64Chars.charAt((bitmap >> 12) & 63);
-      result += (i - 1 <= str.length) ? base64Chars.charAt((bitmap >> 6) & 63) : "=";
-      result += (i - 2 <= str.length) ? base64Chars.charAt(bitmap & 63) : "=";
+      result += (i - 2 < strLen) ? base64Chars.charAt((bitmap >> 6) & 63) : "=";
+      result += (i - 1 < strLen) ? base64Chars.charAt(bitmap & 63) : "=";
     }
     return result;
   }
@@ -1254,7 +1255,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.0.9",
+    version: "2.1.0",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
