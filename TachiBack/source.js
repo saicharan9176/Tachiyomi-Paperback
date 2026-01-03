@@ -795,6 +795,19 @@ var _Sources = (() => {
     return result.data;
   }
   async function getMangaDetails(mangaId, requestManager, stateManager) {
+    // Handle placeholder IDs for server unavailable state
+    if (mangaId === "placeholder-id") {
+      return {
+        image: "",
+        artist: "N/A",
+        author: "N/A",
+        desc: "Server is currently unavailable. Please check your connection settings.",
+        status: "Unknown",
+        hentai: false,
+        titles: ["Server Unavailable"],
+        tags: []
+      };
+    }
     const MANGA_DETAILS_QUERY = `
 		query getMangaDetails($id: Int!) {
 			manga(id: $id) {
@@ -1164,7 +1177,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.0.2",
+    version: "2.0.3",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1202,6 +1215,14 @@ var _Sources = (() => {
       });
     }
     async getMangaDetails(mangaId) {
+      // Handle placeholder IDs gracefully
+      if (mangaId === "placeholder-id") {
+        const details = await getMangaDetails(mangaId, this.requestManager, this.stateManager);
+        return App.createSourceManga({
+          id: mangaId,
+          mangaInfo: App.createMangaInfo(details)
+        });
+      }
       return App.createSourceManga({
         id: mangaId,
         mangaInfo: App.createMangaInfo({
@@ -1210,6 +1231,10 @@ var _Sources = (() => {
       });
     }
     async getChapters(mangaId) {
+      // Handle placeholder IDs - return empty chapters array
+      if (mangaId === "placeholder-id") {
+        return [];
+      }
       const CHAPTERS_QUERY = `
 			query getChapters($mangaId: Int!) {
 				chapters(condition: {mangaId: $mangaId}) {
