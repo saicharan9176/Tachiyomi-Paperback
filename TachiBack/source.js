@@ -1269,7 +1269,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.1.4",
+    version: "2.1.5",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1714,7 +1714,7 @@ var _Sources = (() => {
             if (!manga?.id || !manga?.title) continue;
             tiles.push(App.createPartialSourceManga({
               title: manga.title,
-              image: `${tachiBackAPI.url}${manga.thumbnailUrl || \"\"}`,
+              image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
               mangaId: `${manga.id}`,
               subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
             }));
