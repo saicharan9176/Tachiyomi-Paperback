@@ -1269,7 +1269,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.1.7",
+    version: "2.1.8",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1544,6 +1544,7 @@ var _Sources = (() => {
               console.error(`Invalid category ID: ${section.id}`);
               continue;
             }
+            console.log(`[DEBUG] Querying category ${categoryId} (${section.title}) with limit ${pageSize}`);
             query = `
 						query getCategoryMangas($categoryId: Int!, $limit: Int!) {
 							mangas(
@@ -1575,6 +1576,7 @@ var _Sources = (() => {
             let items = [];
             if (section.id === "continuereading") {
               items = data?.chapters?.nodes || [];
+              console.log(`[DEBUG] ${section.id}: Got ${items.length} chapters`);
               for (const chapter of items) {
                 if (!chapter?.manga?.id || !chapter?.manga?.title) {
                   console.warn("Skipping chapter with missing manga data:", chapter);
@@ -1589,21 +1591,46 @@ var _Sources = (() => {
               }
             } else {
               items = data?.mangas?.nodes || [];
-              for (const manga of items) {
-                if (!manga?.id || !manga?.title) {
-                  console.warn("Skipping manga with missing data:", manga);
-                  continue;
+              console.log(`[DEBUG] ${section.id}: Got ${items.length} total manga from query`);
+              if (section.id.startsWith("category-")) {
+                const sectionCategoryId = parseInt(section.id.replace("category-", ""));
+                console.log(`[DEBUG] Filtering for category ID: ${sectionCategoryId}`);
+                let filteredCount = 0;
+                for (const manga of items) {
+                  if (!manga?.id || !manga?.title) {
+                    console.warn("Skipping manga with missing data:", manga);
+                    continue;
+                  }
+                  const mangaCategoryIds = manga.categories?.nodes?.map(c => c.id) || [];
+                  if (mangaCategoryIds.includes(sectionCategoryId)) {
+                    filteredCount++;
+                    tiles.push(App.createPartialSourceManga({
+                      title: manga.title,
+                      image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
+                      mangaId: `${manga.id}`,
+                      subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
+                    }));
+                  }
                 }
-                tiles.push(App.createPartialSourceManga({
-                  title: manga.title,
-                  image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
-                  mangaId: `${manga.id}`,
-                  subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
-                }));
+                console.log(`[DEBUG] ${section.id}: Filtered to ${filteredCount} manga matching category ${sectionCategoryId}`);
+              } else {
+                for (const manga of items) {
+                  if (!manga?.id || !manga?.title) {
+                    console.warn("Skipping manga with missing data:", manga);
+                    continue;
+                  }
+                  tiles.push(App.createPartialSourceManga({
+                    title: manga.title,
+                    image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
+                    mangaId: `${manga.id}`,
+                    subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
+                  }));
+                }
               }
             }
             section.items = tiles;
             if (tiles.length === pageSize) section.containsMoreItems = true;
+            console.log(`[DEBUG] ${section.id}: Returning ${tiles.length} tiles`);
             sectionCallback(section);
           }).catch((error) => {
             console.error(`Failed to load section ${section.id}:`, error);
