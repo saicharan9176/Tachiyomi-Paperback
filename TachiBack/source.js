@@ -1269,7 +1269,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.1.6",
+    version: "2.1.7",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1540,10 +1540,14 @@ var _Sources = (() => {
             break;
           case section.id.startsWith("category-"):
             const categoryId = parseInt(section.id.replace("category-", ""));
+            if (isNaN(categoryId)) {
+              console.error(`Invalid category ID: ${section.id}`);
+              continue;
+            }
             query = `
 						query getCategoryMangas($categoryId: Int!, $limit: Int!) {
 							mangas(
-								filter: {categoryId: $categoryId, inLibrary: true}
+								condition: {inLibrary: true}
 								first: $limit
 							) {
 								nodes {
@@ -1551,6 +1555,11 @@ var _Sources = (() => {
 									title
 									thumbnailUrl
 									unreadCount
+									categories {
+										nodes {
+											id
+										}
+									}
 								}
 							}
 						}
@@ -1675,10 +1684,14 @@ var _Sources = (() => {
           break;
         case homepageSectionId.startsWith("category-"):
           const categoryId = parseInt(homepageSectionId.replace("category-", ""));
+          if (isNaN(categoryId)) {
+            console.error(`Invalid category ID: ${homepageSectionId}`);
+            return App.createPagedResults({ results: [], metadata: void 0 });
+          }
           query = `
 					query getCategoryMangas($categoryId: Int!, $offset: Int!, $limit: Int!) {
 						mangas(
-							filter: {categoryId: $categoryId, inLibrary: true}
+							condition: {inLibrary: true}
 							offset: $offset
 							first: $limit
 						) {
@@ -1687,6 +1700,11 @@ var _Sources = (() => {
 								title
 								thumbnailUrl
 								unreadCount
+								categories {
+									nodes {
+										id
+									}
+								}
 							}
 						}
 					}
