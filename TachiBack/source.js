@@ -834,6 +834,20 @@ var _Sources = (() => {
         tags: []
       };
     }
+    // Handle error manga IDs (from failed section loads)
+    if (mangaId.startsWith("error-")) {
+      const sectionId = mangaId.replace("error-", "");
+      return {
+        image: "",
+        artist: "Debug Info",
+        author: "Tachi-back Extension",
+        desc: `This is a debug error tile for section "${sectionId}".\n\nThe section failed to load. Check Safari Web Inspector console logs for details.\n\nCommon causes:\n- GraphQL query errors\n- Network connectivity issues\n- Category filtering returned 0 results\n\nTo debug: Connect iPhone to Mac via USB, open Safari → Develop → [Your iPhone] → Paperback → Console tab`,
+        status: "Error",
+        hentai: false,
+        titles: ["Section Load Error"],
+        tags: []
+      };
+    }
     const MANGA_DETAILS_QUERY = `
 		query getMangaDetails($id: Int!) {
 			manga(id: $id) {
@@ -1269,7 +1283,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.2.1",
+    version: "2.2.2",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
