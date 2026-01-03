@@ -1711,9 +1711,10 @@ var _Sources = (() => {
         } else {
           items = data.mangas?.nodes || [];
           for (const manga of items) {
+            if (!manga?.id || !manga?.title) continue;
             tiles.push(App.createPartialSourceManga({
               title: manga.title,
-              image: `${tachiBackAPI.url}${manga.thumbnailUrl}`,
+              image: `${tachiBackAPI.url}${manga.thumbnailUrl || \"\"}`,
               mangaId: `${manga.id}`,
               subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
             }));
