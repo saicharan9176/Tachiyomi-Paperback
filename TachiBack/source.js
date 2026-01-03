@@ -1699,11 +1699,12 @@ var _Sources = (() => {
         const tiles = [];
         let items = [];
         if (homepageSectionId === "continuereading") {
-          items = data.chapters?.nodes || [];
+          items = data?.chapters?.nodes || [];
           for (const chapter of items) {
+            if (!chapter?.manga?.id || !chapter?.manga?.title) continue;
             tiles.push(App.createPartialSourceManga({
               title: chapter.manga.title,
-              image: `${tachiBackAPI.url}${chapter.manga.thumbnailUrl}`,
+              image: `${tachiBackAPI.url}${chapter.manga.thumbnailUrl || ""}`,
               mangaId: `${chapter.manga.id}`,
               subtitle: `Reading (${chapter.lastPageRead || 0})`
             }));
