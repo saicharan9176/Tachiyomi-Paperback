@@ -1269,7 +1269,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.1.5",
+    version: "2.1.6",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1455,7 +1455,12 @@ var _Sources = (() => {
 			`;
         try {
           const data = await executeGraphQL(CATEGORIES_QUERY, {}, this.requestManager, this.stateManager);
-          for (const category of data.categories.nodes) {
+          const categories = data?.categories?.nodes || [];
+          for (const category of categories) {
+            if (!category?.id || !category?.name) {
+              console.warn("Skipping category with missing data:", category);
+              continue;
+            }
             sections.push(App.createHomeSection({
               id: `category-${category.id}`,
               title: category.name,
