@@ -750,10 +750,10 @@ var _Sources = (() => {
       const bitmap = (a << 16) | (b << 8) | c;
       result += base64Chars.charAt((bitmap >> 18) & 63);
       result += base64Chars.charAt((bitmap >> 12) & 63);
-      result += base64Chars.charAt(i - 1 < str.length ? (bitmap >> 6) & 63 : 64);
-      result += base64Chars.charAt(i - 2 < str.length ? bitmap & 63 : 64);
+      result += (i - 1 <= str.length) ? base64Chars.charAt((bitmap >> 6) & 63) : "=";
+      result += (i - 2 <= str.length) ? base64Chars.charAt(bitmap & 63) : "=";
     }
-    return result.replace(/A(?=A$|A{2}$)/g, "=");
+    return result;
   }
   var TachiBackRequestInterceptor = class {
     constructor(stateManager) {
@@ -1254,7 +1254,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.0.8",
+    version: "2.0.9",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
