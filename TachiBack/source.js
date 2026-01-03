@@ -1283,7 +1283,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.2.3",
+    version: "2.2.4",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1339,6 +1339,10 @@ var _Sources = (() => {
     async getChapters(mangaId) {
       // Handle placeholder IDs - return empty chapters array
       if (mangaId === "placeholder-id") {
+        return [];
+      }
+      // Handle error manga IDs (from failed section loads)
+      if (mangaId.startsWith("error-")) {
         return [];
       }
       const CHAPTERS_QUERY = `
@@ -1415,7 +1419,12 @@ var _Sources = (() => {
       return [];
     }
     async getHomePageSections(sectionCallback) {
-      console.log("=== getHomePageSections CALLED ===");
+      try {
+        console.log("=== getHomePageSections CALLED ===");
+        throw new Error("DEBUG: getHomePageSections was called! Check if you see this error.");
+      } catch (debugError) {
+        console.error("Debug trace:", debugError);
+      }
       if (!await this.interceptor.isServerAvailable()) {
         console.log("Server not available, showing placeholder");
         sectionCallback(
