@@ -22,10 +22,6 @@ var _Sources = (() => {
     return to;
   };
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-    // If the importer is in node compatibility mode or this is not an ESM
-    // file that has been converted to a CommonJS file using a Babel-
-    // compatible transform (i.e. "__esModule" has not been set), then set
-    // "default" to the CommonJS "module.exports" for node compatibility.
     isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
     mod
   ));
@@ -721,7 +717,7 @@ var _Sources = (() => {
     }
   });
 
-  // src/TachiBack/TachiBack.ts
+  
   var TachiBack_exports = {};
   __export(TachiBack_exports, {
     TachiBack: () => TachiBack,
@@ -729,7 +725,7 @@ var _Sources = (() => {
   });
   var import_types = __toESM(require_lib());
 
-  // src/TachiBack/Common.ts
+  
   var TACHIBACK_PUBLICATION_STATUS = {
     "ONGOING": "Ongoing",
     "COMPLETED": "Completed",
@@ -804,24 +800,31 @@ var _Sources = (() => {
     ];
   }
   async function executeGraphQL(query, variables, requestManager, stateManager) {
+    console.log("[executeGraphQL] Starting query with variables:", JSON.stringify(variables));
     const tachiBackAPI = await getTachiBackAPI(stateManager);
+    console.log("[executeGraphQL] API URL:", tachiBackAPI.url);
     const request = App.createRequest({
       url: `${tachiBackAPI.url}/api/graphql`,
       method: "POST",
       data: JSON.stringify({ query, variables })
     });
+    console.log("[executeGraphQL] Sending request...");
     const response = await requestManager.schedule(request, 1);
+    console.log("[executeGraphQL] Got response, parsing...");
     const result = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
     if (result.errors) {
+      console.error("[executeGraphQL] GraphQL errors:", result.errors);
       throw new Error(`GraphQL Error: ${result.errors[0]?.message || JSON.stringify(result.errors)}`);
     }
     if (!result.data) {
+      console.error("[executeGraphQL] No data in response:", result);
       throw new Error("GraphQL returned no data");
     }
+    console.log("[executeGraphQL] Success! Data keys:", Object.keys(result.data));
     return result.data;
   }
   async function getMangaDetails(mangaId, requestManager, stateManager) {
-    // Handle placeholder IDs for server unavailable state
+
     if (mangaId === "placeholder-id") {
       return {
         image: "",
@@ -1283,7 +1286,7 @@ var _Sources = (() => {
 
   // src/TachiBack/TachiBack.ts
   var TachiBackInfo = {
-    version: "2.2.5",
+    version: "2.2.6",
     name: "Tachi-back",
     icon: "icon.png",
     author: "saicharan9176",
@@ -1604,12 +1607,14 @@ var _Sources = (() => {
         }
         promises.push(
           executeGraphQL(query, variables, this.requestManager, this.stateManager).then((data) => {
+            console.log(`[${section.id}] Got data:`, JSON.stringify(data).substring(0, 200) + "...");
             const tiles = [];
             let items = [];
             if (section.id === "continuereading") {
               items = data?.chapters?.nodes || [];
-              console.log(`[DEBUG] ${section.id}: Got ${items.length} chapters`);
+              console.log(`[${section.id}] Processing ${items.length} chapters`);
               for (const chapter of items) {
+                console.log(`[${section.id}] Chapter data:`, chapter?.manga?.id, chapter?.manga?.title);
                 if (!chapter?.manga?.id || !chapter?.manga?.title) {
                   console.warn("Skipping chapter with missing manga data:", chapter);
                   continue;
@@ -1623,19 +1628,21 @@ var _Sources = (() => {
               }
             } else {
               items = data?.mangas?.nodes || [];
-              console.log(`[DEBUG] ${section.id}: Got ${items.length} total manga from query`);
+              console.log(`[${section.id}] Processing ${items.length} manga items`);
               if (section.id.startsWith("category-")) {
                 const sectionCategoryId = parseInt(section.id.replace("category-", ""));
-                console.log(`[DEBUG] Filtering for category ID: ${sectionCategoryId}`);
+                console.log(`[${section.id}] Filtering for category ID: ${sectionCategoryId}`);
                 let filteredCount = 0;
                 for (const manga of items) {
+                  console.log(`[${section.id}] Manga ${manga?.id}: categories =`, manga?.categories?.nodes?.map(c => c.id));
                   if (!manga?.id || !manga?.title) {
                     console.warn("Skipping manga with missing data:", manga);
                     continue;
                   }
                   const mangaCategoryIds = manga.categories?.nodes?.map(c => c.id) || [];
-                  console.log(`[DEBUG] Manga ${manga.id} (${manga.title}) has categories: [${mangaCategoryIds.join(", ")}], looking for ${sectionCategoryId}`);
-                  if (mangaCategoryIds.includes(sectionCategoryId)) {
+                  const matches = mangaCategoryIds.includes(sectionCategoryId);
+                  console.log(`[${section.id}] Manga ${manga.id}: ${matches ? "MATCH" : "skip"}`);
+                  if (matches) {
                     filteredCount++;
                     tiles.push(App.createPartialSourceManga({
                       title: manga.title,
@@ -1664,12 +1671,14 @@ var _Sources = (() => {
                 }
               }
             }
+            console.log(`[${section.id}] Created ${tiles.length} tiles, calling sectionCallback...`);
             section.items = tiles;
             if (tiles.length === pageSize) section.containsMoreItems = true;
-            console.log(`[DEBUG] ${section.id}: Returning ${tiles.length} tiles`);
             sectionCallback(section);
+            console.log(`[${section.id}] ✓ Section callback complete`);
           }).catch((error) => {
-            console.error(`Failed to load section ${section.id}:`, error);
+            console.error(`[${section.id}] ✗ ERROR:`, error.message);
+            console.error(`[${section.id}] Stack:`, error.stack);
             section.items = [
               App.createPartialSourceManga({
                 title: "Error Loading Section",
@@ -1685,9 +1694,11 @@ var _Sources = (() => {
       await Promise.all(promises);
     }
     async getViewMoreItems(homepageSectionId, metadata) {
+      console.log(`[getViewMoreItems] Called for: ${homepageSectionId}, offset: ${metadata?.offset ?? 0}`);
       const tachiBackAPI = await getTachiBackAPI(this.stateManager);
       const { pageSize } = await getOptions(this.stateManager);
       const offset = metadata?.offset ?? 0;
+      console.log(`[getViewMoreItems] PageSize: ${pageSize}, Offset: ${offset}`);
       let query, variables = {};
       switch (true) {
         case homepageSectionId === "continuereading":
@@ -1804,9 +1815,10 @@ var _Sources = (() => {
           }
         } else {
           items = data.mangas?.nodes || [];
+          console.log(`[getViewMoreItems] Got ${items.length} manga items`);
           if (homepageSectionId.startsWith("category-")) {
             const sectionCategoryId = parseInt(homepageSectionId.replace("category-", ""));
-            console.log(`[getViewMoreItems] Filtering ${items.length} manga for category ${sectionCategoryId}`);
+            console.log(`[getViewMoreItems] Filtering for category ${sectionCategoryId}`);
             for (const manga of items) {
               if (!manga?.id || !manga?.title) continue;
               const mangaCategoryIds = manga.categories?.nodes?.map(c => c.id) || [];
@@ -1819,8 +1831,9 @@ var _Sources = (() => {
                 }));
               }
             }
-            console.log(`[getViewMoreItems] Filtered to ${tiles.length} manga`);
+            console.log(`[getViewMoreItems] Filtered: ${tiles.length} manga match category`);
           } else {
+            console.log(`[getViewMoreItems] Adding all ${items.length} items (not a category)`);
             for (const manga of items) {
               if (!manga?.id || !manga?.title) continue;
               tiles.push(App.createPartialSourceManga({
@@ -1832,12 +1845,14 @@ var _Sources = (() => {
             }
           }
         }
+        console.log(`[getViewMoreItems] Returning ${tiles.length} tiles, hasMore: ${tiles.length === pageSize}`);
         return App.createPagedResults({
           results: tiles,
           metadata: tiles.length === pageSize ? { offset: offset + pageSize } : void 0
         });
       } catch (error) {
-        console.error("Failed to load more items:", error);
+        console.error(`[getViewMoreItems] ERROR for ${homepageSectionId}:`, error.message);
+        console.error(`[getViewMoreItems] Stack:`, error.stack);
         return App.createPagedResults({
           results: [],
           metadata: void 0
