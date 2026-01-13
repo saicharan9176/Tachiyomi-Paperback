@@ -1,5 +1,5 @@
 {
-    "buildTime": "2026-01-13T18:07:00.000Z",
+    "buildTime": "2026-01-13T18:22:00.000Z",
     "sources": [
         {
             "id": "TachiBack",
@@ -8,7 +8,7 @@
             "desc": "Tachi-back server client extension for Paperback",
             "website": "https://github.com/saicharan9176/Tachiyomi-Paperback",
             "contentRating": "EVERYONE",
-            "version": "2.2.7",
+            "version": "3.0.0",
             "icon": "icon.png",
             "tags": [
                 {
