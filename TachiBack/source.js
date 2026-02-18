@@ -1400,6 +1400,37 @@ var _Sources = (() => {
       });
     }
     async getChapterDetails(mangaId, chapterId) {
+      const parsedChapterId = parseInt(chapterId);
+      if (isNaN(parsedChapterId)) {
+        throw new Error(`Invalid chapter ID: ${chapterId}`);
+      }
+      const tachiBackAPI = await getTachiBackAPI(this.stateManager);
+
+      // First, check if the chapter is already downloaded
+      const CHAPTER_STATUS_QUERY = `
+        query getChapterStatus($chapterId: Int!) {
+          chapter(id: $chapterId) {
+            isDownloaded
+            pageCount
+            sourceOrder
+          }
+        }
+      `;
+      const statusData = await executeGraphQL(CHAPTER_STATUS_QUERY, { chapterId: parsedChapterId }, this.requestManager, this.stateManager);
+      const chapter = statusData?.chapter;
+
+      if (chapter?.isDownloaded && chapter?.pageCount > 0) {
+        // Chapter is downloaded — serve pages directly from the Tachiyomi server (local files)
+        console.log(`[getChapterDetails] Chapter ${chapterId} is downloaded, serving from local server`);
+        const pages = [];
+        for (let i = 0; i < chapter.pageCount; i++) {
+          pages.push(`${tachiBackAPI.url}/api/v1/manga/${mangaId}/chapter/${chapter.sourceOrder}/page/${i}`);
+        }
+        return App.createChapterDetails({ id: chapterId, mangaId, pages });
+      }
+
+      // Chapter is NOT downloaded — use fetchChapterPages mutation to load from online source
+      console.log(`[getChapterDetails] Chapter ${chapterId} is not downloaded, fetching from online source`);
       const FETCH_CHAPTER_PAGES_MUTATION = `
         mutation fetchChapterPages($chapterId: Int!) {
           fetchChapterPages(input: { chapterId: $chapterId }) {
@@ -1407,11 +1438,6 @@ var _Sources = (() => {
           }
         }
       `;
-      const parsedChapterId = parseInt(chapterId);
-      if (isNaN(parsedChapterId)) {
-        throw new Error(`Invalid chapter ID: ${chapterId}`);
-      }
-      const tachiBackAPI = await getTachiBackAPI(this.stateManager);
       const data = await executeGraphQL(FETCH_CHAPTER_PAGES_MUTATION, { chapterId: parsedChapterId }, this.requestManager, this.stateManager);
       const rawPages = data?.fetchChapterPages?.pages;
       if (!rawPages || rawPages.length === 0) {
@@ -1424,11 +1450,7 @@ var _Sources = (() => {
         }
         return `${tachiBackAPI.url}${page}`;
       });
-      return App.createChapterDetails({
-        id: chapterId,
-        mangaId,
-        pages
-      });
+      return App.createChapterDetails({ id: chapterId, mangaId, pages });
     }
     async getSearchResults(searchQuery, metadata) {
       return await searchRequest(searchQuery, metadata, this.requestManager, this.interceptor, this.stateManager, this.cacheManager);
