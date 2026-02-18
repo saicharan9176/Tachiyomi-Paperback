@@ -1527,7 +1527,8 @@ var _Sources = (() => {
 						query getContinueReading($limit: Int!) {
 							chapters(
 								condition: {isRead: false}
-								orderBy: LAST_READ_AT_DESC
+								orderBy: LAST_READ_AT
+                                orderByType: DESC
 								first: $limit
 							) {
 								nodes {
@@ -1549,7 +1550,8 @@ var _Sources = (() => {
 						query getRecentlyUpdated($limit: Int!) {
 							mangas(
 								condition: {inLibrary: true}
-								orderBy: CHAPTERS_LAST_FETCHED_AT_DESC
+								orderBy: LAST_FETCHED_AT
+                                orderByType: DESC
 								first: $limit
 							) {
 								nodes {
@@ -1568,7 +1570,8 @@ var _Sources = (() => {
 						query getRecentlyAdded($limit: Int!) {
 							mangas(
 								condition: {inLibrary: true}
-								orderBy: IN_LIBRARY_AT_DESC
+								orderBy: IN_LIBRARY_AT
+                                orderByType: DESC
 								first: $limit
 							) {
 								nodes {
@@ -1683,7 +1686,8 @@ var _Sources = (() => {
 					query getContinueReading($offset: Int!, $limit: Int!) {
 						chapters(
 							condition: {isRead: false}
-							orderBy: LAST_READ_AT_DESC
+							orderBy: LAST_READ_AT
+                            orderByType: DESC
 							offset: $offset
 							first: $limit
 						) {
@@ -1706,7 +1710,8 @@ var _Sources = (() => {
 					query getRecentlyUpdated($offset: Int!, $limit: Int!) {
 						mangas(
 							condition: {inLibrary: true}
-							orderBy: CHAPTERS_LAST_FETCHED_AT_DESC
+							orderBy: LAST_FETCHED_AT
+                            orderByType: DESC
 							offset: $offset
 							first: $limit
 						) {
@@ -1726,7 +1731,8 @@ var _Sources = (() => {
 					query getRecentlyAdded($offset: Int!, $limit: Int!) {
 						mangas(
 							condition: {inLibrary: true}
-							orderBy: IN_LIBRARY_AT_DESC
+							orderBy: IN_LIBRARY_AT
+                            orderByType: DESC
 							offset: $offset
 							first: $limit
 						) {
