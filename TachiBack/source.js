@@ -1585,17 +1585,18 @@ var _Sources = (() => {
             console.log(`[DEBUG] Querying category ${categoryId} (${section.title}) with limit ${pageSize}`);
             query = `
 						query getCategoryMangas($categoryId: Int!, $limit: Int!) {
-							category(id: $categoryId) {
-								mangas(
-									condition: {inLibrary: true}
-									first: $limit
-								) {
-									nodes {
-										id
-										title
-										thumbnailUrl
-										unreadCount
-									}
+							mangas(
+								condition: {
+									inLibrary: true,
+									categoryIds: [$categoryId]
+								}
+								first: $limit
+							) {
+								nodes {
+									id
+									title
+									thumbnailUrl
+									unreadCount
 								}
 							}
 						}
@@ -1742,18 +1743,19 @@ var _Sources = (() => {
           }
           query = `
 					query getCategoryMangas($categoryId: Int!, $offset: Int!, $limit: Int!) {
-						category(id: $categoryId) {
-							mangas(
-								condition: {inLibrary: true}
-								offset: $offset
-								first: $limit
-							) {
-								nodes {
-									id
-									title
-									thumbnailUrl
-									unreadCount
-								}
+						mangas(
+							condition: {
+								inLibrary: true,
+								categoryIds: [$categoryId]
+							}
+							offset: $offset
+							first: $limit
+						) {
+							nodes {
+								id
+								title
+								thumbnailUrl
+								unreadCount
 							}
 						}
 					}
