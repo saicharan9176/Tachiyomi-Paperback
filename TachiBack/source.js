@@ -881,7 +881,12 @@ var _Sources = (() => {
     }
     const data = await executeGraphQL(MANGA_DETAILS_QUERY, { id: parsedId }, requestManager, stateManager);
     const manga = data.manga;
-    const genres = manga.genre ? manga.genre.split(",").map((g) => g.trim()) : [];
+    let genres = [];
+    if (Array.isArray(manga.genre)) {
+      genres = manga.genre;
+    } else if (typeof manga.genre === 'string') {
+      genres = manga.genre.split(",").map((g) => g.trim());
+    }
     const tagSections = [];
     if (genres.length > 0) {
       const tags = genres.map((genre) => App.createTag({
