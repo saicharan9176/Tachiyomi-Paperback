@@ -1400,25 +1400,30 @@ var _Sources = (() => {
       });
     }
     async getChapterDetails(mangaId, chapterId) {
-      const CHAPTER_PAGES_QUERY = `
-			query getChapterPages($chapterId: Int!) {
-				chapter(id: $chapterId) {
-					id
-					pageCount
-				}
-			}
-		`;
+      const FETCH_CHAPTER_PAGES_MUTATION = `
+        mutation fetchChapterPages($chapterId: Int!) {
+          fetchChapterPages(input: { chapterId: $chapterId }) {
+            pages
+          }
+        }
+      `;
       const parsedChapterId = parseInt(chapterId);
       if (isNaN(parsedChapterId)) {
         throw new Error(`Invalid chapter ID: ${chapterId}`);
       }
-      const data = await executeGraphQL(CHAPTER_PAGES_QUERY, { chapterId: parsedChapterId }, this.requestManager, this.stateManager);
-      const pageCount = data.chapter.pageCount;
       const tachiBackAPI = await getTachiBackAPI(this.stateManager);
-      const pages = [];
-      for (let i = 0; i < pageCount; i++) {
-        pages.push(`${tachiBackAPI.url}/api/v1/manga/${mangaId}/chapter/${chapterId}/page/${i}`);
+      const data = await executeGraphQL(FETCH_CHAPTER_PAGES_MUTATION, { chapterId: parsedChapterId }, this.requestManager, this.stateManager);
+      const rawPages = data?.fetchChapterPages?.pages;
+      if (!rawPages || rawPages.length === 0) {
+        throw new Error(`No pages returned for chapter ${chapterId}`);
       }
+      // Pages may be relative paths (e.g. /api/v1/...) or absolute URLs
+      const pages = rawPages.map(page => {
+        if (page.startsWith('http://') || page.startsWith('https://')) {
+          return page;
+        }
+        return `${tachiBackAPI.url}${page}`;
+      });
       return App.createChapterDetails({
         id: chapterId,
         mangaId,
