@@ -1430,12 +1430,7 @@ var _Sources = (() => {
       return [];
     }
     async getHomePageSections(sectionCallback) {
-      try {
-        console.log("=== getHomePageSections CALLED ===");
-        throw new Error("DEBUG: getHomePageSections was called! Check if you see this error.");
-      } catch (debugError) {
-        console.error("Debug trace:", debugError);
-      }
+      console.log("=== getHomePageSections CALLED ===");
       if (!await this.interceptor.isServerAvailable()) {
         console.log("Server not available, showing placeholder");
         sectionCallback(
@@ -1590,19 +1585,16 @@ var _Sources = (() => {
             console.log(`[DEBUG] Querying category ${categoryId} (${section.title}) with limit ${pageSize}`);
             query = `
 						query getCategoryMangas($categoryId: Int!, $limit: Int!) {
-							mangas(
-								condition: {inLibrary: true}
-								first: $limit
-							) {
-								nodes {
-									id
-									title
-									thumbnailUrl
-									unreadCount
-									categories {
-										nodes {
-											id
-										}
+							category(id: $categoryId) {
+								mangas(
+									condition: {inLibrary: true}
+									first: $limit
+								) {
+									nodes {
+										id
+										title
+										thumbnailUrl
+										unreadCount
 									}
 								}
 							}
@@ -1635,48 +1627,19 @@ var _Sources = (() => {
                 }));
               }
             } else {
-              items = data?.mangas?.nodes || [];
+              items = data?.mangas?.nodes || data?.category?.mangas?.nodes || [];
               console.log(`[${section.id}] Processing ${items.length} manga items`);
-              if (section.id.startsWith("category-")) {
-                const sectionCategoryId = parseInt(section.id.replace("category-", ""));
-                console.log(`[${section.id}] Filtering for category ID: ${sectionCategoryId}`);
-                let filteredCount = 0;
-                for (const manga of items) {
-                  console.log(`[${section.id}] Manga ${manga?.id}: categories =`, manga?.categories?.nodes?.map(c => c.id));
-                  if (!manga?.id || !manga?.title) {
-                    console.warn("Skipping manga with missing data:", manga);
-                    continue;
-                  }
-                  const mangaCategoryIds = manga.categories?.nodes?.map(c => c.id) || [];
-                  const matches = mangaCategoryIds.includes(sectionCategoryId);
-                  console.log(`[${section.id}] Manga ${manga.id}: ${matches ? "MATCH" : "skip"}`);
-                  if (matches) {
-                    filteredCount++;
-                    tiles.push(App.createPartialSourceManga({
-                      title: manga.title,
-                      image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
-                      mangaId: `${manga.id}`,
-                      subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
-                    }));
-                  }
+              for (const manga of items) {
+                if (!manga?.id || !manga?.title) {
+                  console.warn("Skipping manga with missing data:", manga);
+                  continue;
                 }
-                console.log(`[DEBUG] ${section.id}: Filtered to ${filteredCount} manga matching category ${sectionCategoryId}`);
-                if (filteredCount === 0 && items.length > 0) {
-                  throw new Error(`Category "${section.title}": Queried ${items.length} manga but none have category ID ${sectionCategoryId}. Check Tachidesk category assignments.`);
-                }
-              } else {
-                for (const manga of items) {
-                  if (!manga?.id || !manga?.title) {
-                    console.warn("Skipping manga with missing data:", manga);
-                    continue;
-                  }
-                  tiles.push(App.createPartialSourceManga({
-                    title: manga.title,
-                    image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
-                    mangaId: `${manga.id}`,
-                    subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
-                  }));
-                }
+                tiles.push(App.createPartialSourceManga({
+                  title: manga.title,
+                  image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
+                  mangaId: `${manga.id}`,
+                  subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
+                }));
               }
             }
             console.log(`[${section.id}] Created ${tiles.length} tiles, calling sectionCallback...`);
@@ -1779,20 +1742,17 @@ var _Sources = (() => {
           }
           query = `
 					query getCategoryMangas($categoryId: Int!, $offset: Int!, $limit: Int!) {
-						mangas(
-							condition: {inLibrary: true}
-							offset: $offset
-							first: $limit
-						) {
-							nodes {
-								id
-								title
-								thumbnailUrl
-								unreadCount
-								categories {
-									nodes {
-										id
-									}
+						category(id: $categoryId) {
+							mangas(
+								condition: {inLibrary: true}
+								offset: $offset
+								first: $limit
+							) {
+								nodes {
+									id
+									title
+									thumbnailUrl
+									unreadCount
 								}
 							}
 						}
@@ -1822,35 +1782,16 @@ var _Sources = (() => {
             }));
           }
         } else {
-          items = data.mangas?.nodes || [];
+          items = data.mangas?.nodes || data.category?.mangas?.nodes || [];
           console.log(`[getViewMoreItems] Got ${items.length} manga items`);
-          if (homepageSectionId.startsWith("category-")) {
-            const sectionCategoryId = parseInt(homepageSectionId.replace("category-", ""));
-            console.log(`[getViewMoreItems] Filtering for category ${sectionCategoryId}`);
-            for (const manga of items) {
-              if (!manga?.id || !manga?.title) continue;
-              const mangaCategoryIds = manga.categories?.nodes?.map(c => c.id) || [];
-              if (mangaCategoryIds.includes(sectionCategoryId)) {
-                tiles.push(App.createPartialSourceManga({
-                  title: manga.title,
-                  image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
-                  mangaId: `${manga.id}`,
-                  subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
-                }));
-              }
-            }
-            console.log(`[getViewMoreItems] Filtered: ${tiles.length} manga match category`);
-          } else {
-            console.log(`[getViewMoreItems] Adding all ${items.length} items (not a category)`);
-            for (const manga of items) {
-              if (!manga?.id || !manga?.title) continue;
-              tiles.push(App.createPartialSourceManga({
-                title: manga.title,
-                image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
-                mangaId: `${manga.id}`,
-                subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
-              }));
-            }
+          for (const manga of items) {
+            if (!manga?.id || !manga?.title) continue;
+            tiles.push(App.createPartialSourceManga({
+              title: manga.title,
+              image: `${tachiBackAPI.url}${manga.thumbnailUrl || ""}`,
+              mangaId: `${manga.id}`,
+              subtitle: manga.unreadCount ? `${manga.unreadCount} unread` : void 0
+            }));
           }
         }
         console.log(`[getViewMoreItems] Returning ${tiles.length} tiles, hasMore: ${tiles.length === pageSize}`);
